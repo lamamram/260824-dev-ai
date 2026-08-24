@@ -48,6 +48,7 @@ memory=48GB
 processors=10
 swap=12GB
 localhostForwarding=true
+defaultVhdSize=60000000000
 ```
 
 Adaptez ces valeurs à votre machine : ne donnez pas toute la RAM à WSL, Windows doit rester confortable. Appliquez ensuite :
@@ -55,6 +56,14 @@ Adaptez ces valeurs à votre machine : ne donnez pas toute la RAM à WSL, Window
 ```powershell
 wsl --shutdown
 ```
+
+** WSL dans VSCODE **
+
+* ajouter l'**extension WSL de microsoft**
+* chercher `ctr + shift + P` : connect to WSL
+* trouver le dossier windows à partir de `/mnt/c/...`
+
+* OU application WSL et dedans `code`
 
 **Ollama en conteneur**
 

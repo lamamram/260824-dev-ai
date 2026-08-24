@@ -23,3 +23,21 @@
 
 * [ici](./glossaire-parametres-ollama.md)
 
+
+## crash course de Docker
+
+
+Docker est une plateforme permettant de créer, déployer et exécuter des applications dans des conteneurs. Un conteneur est une unité standardisée qui contient tout le nécessaire pour exécuter une application : code, runtime, bibliothèques et dépendances.
+
+* ex lancement d'un postgresql
+
+
+```bash
+# -d: détaché (en arrière-plan)
+# -e: variable d'environnement pour configurer
+# -p: port mapping entre l'hôte et le conteneur
+# --name: nom du conteneur
+# --restart unless-stopped: redémarrage automatique sauf si le conteneur est arrêté manuellement
+# postgres:15-trixie: image officielle de PostgreSQL version 15 avec la variante "trixie"
+docker run -d --name postgres --restart unless-stopped -e POSTGRES_PASSWORD=roottoor -p 5432:5432  postgres:15-trixie
+```

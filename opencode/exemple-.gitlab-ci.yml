@@ -1,0 +1,163 @@
+# préfixer une structure yaml avec "." désactive la structure
+# &truc est une référence à une structure
+.mr_rules: &mr_rules
+  - if: $CI_OPEN_MERGE_REQUESTS
+  - if: $CI_COMMIT_BRANCH == "main"
+
+.use_cache: &use_cache
+  key: "py-deps-$CI_COMMIT_BRANCH"
+  untracked: true
+  policy: pull
+
+image: "$CI_REGISTRY_IMAGE/python:$PYTHON_TAG"
+
+variables:
+  PYTHON_TAG: 3.14.2-slim-trixie
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+stages:
+  - building
+  - testing
+  - qualifying
+  - packaging
+  - staging
+  - browsing
+
+# https://gitlab.com/nagyv/gitlab-opencode
+# le /opencode correspond au dossier templates/opencode.yml
+include:
+  - component: gitlab.lan.fr/formation/gitlab-opencode/opencode@main
+    inputs:
+      config_dir: ${CI_PROJECT_DIR}/.opencode
+      stage: testing
+      # variables cachées qui contient le contenu du fichier ~/.local/share/opencode/auth.json 
+      # en tant que variable "File" et non masquée
+      auth_json: $OPENCODE_AUTH_JSON
+      message: "give me your version on one word"
+
+deps:
+  stage: building
+  tags:
+    - formation
+  variables:
+    TRIGGER_CACHE: "off"
+  script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install -r app/requirements.txt
+    - pip install -r app/requirements-dev.txt
+  cache:
+    key: "py-deps-$CI_COMMIT_BRANCH"
+    paths:
+      - venv/
+    policy: push
+  rules:
+    - changes:
+        - app/requirements.txt
+        - app/requirements-dev.txt
+    - if: $TRIGGER_CACHE == "on"
+     
+.test:
+  stage: testing
+  tags:
+    - formation
+  before_script:
+    - source venv/bin/activate
+  script:
+    # -m "not e2e": pas de test marqués "e2e"
+    - >
+      pytest 
+      -m "not e2e"
+      --junitxml=reports/junit.xml 
+      --cov=app 
+      --cov-report=term 
+      --cov-report=xml:reports/coverage.xml
+  coverage: /TOTAL\s+\d+\s+\d+\s+(\d+%)/
+  artifacts:
+    when: always
+    access: all
+    expire_in: "1 hour"
+    paths:
+      - reports/coverage.xml
+    reports:
+      junit: reports/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: reports/coverage.xml 
+  cache: *use_cache
+  # Alias yaml: accroche le contenu de &mr_rules à la clé rules
+  rules: *mr_rules
+
+.sonar:
+  stage: qualifying
+  tags:
+    - formation
+  image:
+    name: sonarsource/sonar-scanner-cli:12
+    entrypoint: [""]
+  script:
+    - >
+      sonar-scanner
+      -Dsonar.projectKey=dev
+      -Dsonar.sources=./app
+      -Dsonar.exclusions=app/tests/**
+      -Dsonar.host.url=http://gitlab.lan.fr:9000
+      -Dsonar.login=$SONAR_TOKEN
+      -Dsonar.python.coverage.reportPaths=reports/coverage.xml
+      -Dsonar.qualitygate.wait=true
+  rules: *mr_rules
+
+
+#### jobs à exécuter avec un tag git #####
+
+.package:
+  image: alpine/curl
+  tags:
+    - formation
+  stage: packaging
+  script:
+    - tar cvzf dev.tar.gz $CI_PROJECT_DIR
+    - >
+      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" 
+      -k
+      --upload-file dev.tar.gz
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dev/${CI_COMMIT_TAG}/dev.tar.gz"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+$/
+
+.trigger_staging:
+  stage: staging
+  trigger:
+    project: formation/ops
+    branch: main
+    strategy: depend
+  environment:
+    name: staging
+    url: https://dawan.fr
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+$/
+
+.e2e:
+  stage: browsing
+  tags:
+    - formation
+  before_script:
+    - source venv/bin/activate
+    # décompresser le binaire exécutable geckodriver dans le PATH
+    - tar xzf geckodriver-v0.36.0-linux64.tar.gz -C /usr/local/bin/
+    - chmod +x /usr/local/bin/geckodriver
+  # conteneur "sidecars" créés à la volée pour fournir des services au job
+  services:
+    - name: selenium/standalone-firefox:144.0-geckodriver-0.36-20260202
+      # DNS du service => pour connecter le client au serveur
+      alias: selenium-server
+  script:
+    - pytest -m "e2e"
+  cache: *use_cache
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+$/
+    - if: $CI_COMMIT_BRANCH == "main"

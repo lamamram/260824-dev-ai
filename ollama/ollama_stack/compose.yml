@@ -2,6 +2,7 @@
 # MODEL=xxxxxx docker compose --profile gpu-nvidia down [-v]
 # MODEL=xxxxxx docker compose --profile gpu-nvidia restart yyyyy
 # MODEL=xxxxxx docker compose run --rm --no-deps zzzzz
+# exemple de chargement de modèle individuel MODEL=dolphin-mistral:7b docker compose run --rm --no-deps init-ollama-gpu-nvidia
 
 x-service: &default-service
   restart: 'unless-stopped'
@@ -18,8 +19,8 @@ x-labels:
 
 x-ollama: &service-ollama
   <<: *default-service
-  image: "dawan_ollama:${DAWAN_OLLAMA_VERSION:-0.30.11}"
-  # image: ollama/ollama:${OLLAMA_VERSION:-0.9.1-rc0}
+  # image: "dawan_ollama:${DAWAN_OLLAMA_VERSION:-0.30.11}"
+  image: ollama/ollama:${OLLAMA_VERSION:-0.32.15}
   # image: "dawan_ollama:${DAWAN_OLLAMA_VERSION:-0.9}"
   # build:
   #   context: ./ollama_img
@@ -36,12 +37,13 @@ x-ollama: &service-ollama
 
 x-init-ollama: &init-ollama
   # image: "dawan_ollama:${DAWAN_OLLAMA_VERSION:-0.9}"
-  image: "dawan_ollama:${DAWAN_OLLAMA_VERSION:-0.30.11}"
-  build:
-    context: ./ollama_img
-    args:
-      # OLLAMA_VERSION: ${OLLAMA_VERSION:-0.9.1-rc0}
-      OLLAMA_VERSION: ${OLLAMA_VERSION:-0.30.11}
+  image: ollama/ollama:${OLLAMA_VERSION:-0.32.15}
+  # image: "dawan_ollama:${DAWAN_OLLAMA_VERSION:-0.3.11}"
+  # build:
+  #   context: ./ollama_img
+  #   args:
+  #     # OLLAMA_VERSION: ${OLLAMA_VERSION:-0.9.1-rc0}
+  #     OLLAMA_VERSION: ${OLLAMA_VERSION:-0.30.11}
   hostname: init-ollama
   container_name: init-ollama
   restart: "no"
@@ -80,6 +82,8 @@ services:
   init-ollama-cpu:
     <<: *init-ollama
     profiles: ['cpu']
+    # ce service à usage unique est utilisé pour initialiser le modèle dans le conteneur ollama-cpu
+    # ce dernier conteneur doit être en bonne santé pour que l'initialisation du modèle se fasse correctement
     depends_on:
       ollama-cpu:
         condition: service_healthy
@@ -127,8 +131,8 @@ services:
     labels:
       <<: *labels
       app: open-webui
-    # image: ghcr.io/open-webui/open-webui:${OPENWEBUI_IMAGE_VERSION:-main}
-    image: ghcr.io/open-webui/open-webui:${OPENWEBUI_IMAGE_VERSION:-0.9.6}
+    image: ghcr.io/open-webui/open-webui:${OPENWEBUI_IMAGE_VERSION:-main}
+    # image: ghcr.io/open-webui/open-webui:${OPENWEBUI_IMAGE_VERSION:-0.9.6}
     container_name: ollama-open-webui
     hostname: ollama-open-webui
     volumes:
@@ -136,6 +140,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
+      # ajouter l'url de l'API Ollama pour que Open WebUI puisse communiquer avec le conteneur Ollama
+      # avec un réseau custom comme dawan-ollama, on peut utiliser le nom du service Ollama comme hostname (DNS)
       - OLLAMA_BASE_URL=http://ollama:11434
       - ENABLE_OLLAMA_API=True
     networks:
@@ -162,7 +168,7 @@ services:
     networks:
       - dawan-ollama
     ports:
-      - "0.0.0.0:3000:443"   # HTTPS (Open WebUI)
+      - "0.0.0.0:3001:443"   # HTTPS (Open WebUI)
       - "0.0.0.0:8080:80"    # HTTP -> redirection 301 vers HTTPS
     labels:
       <<: *labels

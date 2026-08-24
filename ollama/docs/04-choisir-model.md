@@ -116,6 +116,11 @@ exemple de prompt en json avec rôles :
 > c'est à nous de le quantiser si le moteur le permet (Q8, Q4, vLLM fp8). <br>
 > <span style="color: gold;font-size:16px"><strong>OLLAMA_KV_CACHE_TYPE=FP16 | Q8 | Q4</strong></span>
 
+> <ins>**Ordre de grandeur (qwen3.8:27B, Q4_K_M) :**</ins> 
+>  `KV size = 2 * 4 heads * 256 bytes/head * 16 layers * 2 precision bytes * 256k (contexte) = 16Go`.
+> poids : 17Go (poids) + 16 (Cache) + overhead 2 → **35 Go VRAM** pour un seul utilisateur. <br>
+> avec précision Q4_K_M, le cache KV tombe à ~6 Go → **25 Go VRAM** pour un seul utilisateur.
+
 > <ins>**Ordre de grandeur (Llama-3 8B, FP16) :**</ins> ~**0,12–0,5 Go par 1000 tokens** de contexte et par séquence. Sur un 70B, c'est plusieurs fois plus. Un contexte de 32k tokens peut coûter **plus de VRAM que les poids eux-mêmes**.
 
 ---

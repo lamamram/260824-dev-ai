@@ -29,7 +29,12 @@
 
 Docker est une plateforme permettant de créer, déployer et exécuter des applications dans des conteneurs. Un conteneur est une unité standardisée qui contient tout le nécessaire pour exécuter une application : code, runtime, bibliothèques et dépendances.
 
-* ex lancement d'un postgresql
+### installation de Docker sur wsl sous Windows
+
+* [ici](./config_wsl.md)
+
+
+* **<ins>ex lancement d'un postgresql</ins>**
 
 
 ```bash
@@ -50,7 +55,7 @@ docker run \
        postgres:15-trixie
 ```
 
-* lancement "oneshot" d'un conteneur client
+* **<ins>lancement "oneshot" d'un conteneur client</ins>**
 
 
 ```bash
@@ -64,3 +69,37 @@ docker run \
        --rm \
        -it postgres:15-trixie psql -h 172.17.0.2 -U postgres --password
 ```
+
+* arrêt ou suppression d'un conteneur
+
+```bash
+docker stop <nom_du_conteneur>
+docker rm <nom_du_conteneur>
+docker rm -f <nom_du_conteneur> # force stop + remove
+```
+
+* **<ins>se donner un prompt de shell dans le conteneur serveur</ins>**
+
+```bash
+# -it: mode interactif avec terminal (ajout du flux d'entrée et sortie)
+# bash: shell à exécuter dans le conteneur
+docker exec -it postgres bash
+```
+
+* **<ins>introspection & logs</ins>**
+
+```bash
+# inspecter les détails d'un conteneur
+docker inspect <nom_du_conteneur>
+docker image inspect <nom_de_l_image>
+docker network inspect <nom_du_reseau>
+docker volume inspect <nom_du_volume>
+```
+
+```bash
+docker logs <nom_du_conteneur>
+```
+
+* **<ins>travailler des documents yaml pour configurer une pile de conteneurs</ins>**
+
+- [ici](../ollama_stack/compose.yml)

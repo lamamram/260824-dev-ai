@@ -55,6 +55,8 @@ Adaptez ces valeurs à votre machine : ne donnez pas toute la RAM à WSL, Window
 
 ```powershell
 wsl --shutdown
+# ou pour supprimer
+# wsl --unregister Ubuntu-24.04
 ```
 
 ** WSL dans VSCODE **

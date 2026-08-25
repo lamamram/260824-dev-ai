@@ -103,3 +103,80 @@ docker logs <nom_du_conteneur>
 * **<ins>travailler des documents yaml pour configurer une pile de conteneurs</ins>**
 
 - [ici](../ollama_stack/compose.yml)
+
+
+## :mag_right: ajuster la fenêtre de contexte d'un modèle avec ollama
+
+> rappel des formules et du vocabulaire (`num_ctx`, cache KV, VRAM) : [choisir un modèle §3](./04-choisir-model.md#️-3-fenêtre-de-contexte-et-cache-kv) et [glossaire des paramètres](./glossaire-parametres-ollama.md#num_ctx).
+
+### :compass: le problème
+
+* par défaut, Ollama limite la fenêtre de contexte à **2048 tokens** (`num_ctx`), quelle que soit la capacité réelle du modèle.
+* un modèle comme `llama3.2:3b` (`ollama show llama3.2:3b`) annonce une fenêtre native de **131072 tokens (128k)** — mais l'utiliser en entier coûte du **cache KV**, donc de la **VRAM**, pas seulement des tokens en plus.
+
+### :triangular_ruler: ce que la VRAM permet réellement (ex. GPU local — Quadro P3200, 6 Go)
+
+```
+KV_par_token ≈ 2 (K/V) × n_layers × n_kv_heads × head_dim × octets_précision
+
+llama3.2:3b (28 couches, 8 têtes KV, head_dim 128, cache FP16) :
+KV_par_token ≈ 2 × 28 × 8 × 128 × 2 ≈ 112 Kio/token
+
+num_ctx = 32k  → KV ≈ 3,5 Go   | poids Q4_K_M ≈ 2 Go → total ≈ 6,5 Go  :warning: à la limite
+num_ctx = 128k → KV ≈ 14 Go    | poids Q4_K_M ≈ 2 Go → total ≈ 16 Go   :x: ne tient pas
+```
+
+> avec 6 Go de VRAM, **128k n'est pas atteignable en FP16**, même pour un petit modèle 3B : il faut réduire `num_ctx` et/ou quantiser le cache KV.
+
+### :gear: 3 façons de régler `num_ctx`
+
+1. **valeur par défaut du serveur** (variable d'environnement, s'applique à tout modèle qui ne précise rien) — dans [compose.yml](../ollama_stack/compose.yml), service `ollama-gpu-nvidia` :
+
+```yaml
+environment:
+  - OLLAMA_CONTEXT_LENGTH=32768   # défaut serveur (au lieu de 2048)
+  - OLLAMA_FLASH_ATTENTION=1      # requis pour quantiser le cache KV
+  - OLLAMA_KV_CACHE_TYPE=q8_0     # divise la taille du cache KV par ~2 (q4_0 par ~4)
+```
+
+```bash
+docker compose --profile gpu-nvidia up -d --force-recreate ollama-gpu-nvidia
+```
+
+2. **par requête / session**, en dépassant le défaut si la VRAM suit :
+
+```bash
+docker compose exec ollama-gpu-nvidia ollama run llama3.2:3b
+>>> /set parameter num_ctx 65536
+```
+
+```bash
+curl http://localhost:11434/api/generate -d '{
+  "model": "llama3.2:3b",
+  "prompt": "...",
+  "options": { "num_ctx": 32768 }
+}'
+```
+
+3. **par modèle**, en figeant la valeur dans un `Modelfile` dérivé :
+
+```Modelfile
+FROM llama3.2:3b
+PARAMETER num_ctx 32768
+```
+
+```bash
+docker compose exec ollama-gpu-nvidia   create llama3.2-longctx -f /path/Modelfile
+```
+
+* dans **Open WebUI** : *Workspace → Modèles → paramètres avancés → Context Length* règle le même `num_ctx` via l'API.
+* vérifier le contexte réellement chargé : `ollama ps` (colonne `CONTEXT`) une fois le modèle chargé.
+
+### :white_check_mark: recommandation pour un GPU 6 Go avec `llama3.2:3b`
+
+| usage | `num_ctx` | `OLLAMA_KV_CACHE_TYPE` | commentaire |
+|---|---|---|---|
+| chat courant | 8k–16k | `f16` (défaut) | confortable, aucune perte de qualité |
+| longs documents / RAG | 32k | `q8_0` | nécessite `OLLAMA_FLASH_ATTENTION=1` |
+| 128k (max du modèle) | 128k | `q4_0` | tient tout juste, offload CPU partiel probable → forte baisse de vitesse, à réserver aux cas où la longueur prime sur la latence |
+

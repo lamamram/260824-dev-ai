@@ -104,6 +104,15 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - CUDA_VISIBLE_DEVICES=0
+      # fenêtre de contexte par défaut du serveur (au lieu des 2048 tokens par défaut d'Ollama)
+      # voir ../docs/03-lancer-ollama.md#️-ajuster-la-fenêtre-de-contexte-dun-modèle-avec-ollama
+      # - OLLAMA_CONTEXT_LENGTH=${OLLAMA_CONTEXT_LENGTH:-32768}
+      # active la quantization du cache KV (requis pour OLLAMA_KV_CACHE_TYPE != f16)
+      - OLLAMA_FLASH_ATTENTION=${OLLAMA_FLASH_ATTENTION:-1}
+      # f16 (défaut, pas de perte) | q8_0 (cache ÷2) | q4_0 (cache ÷4, VRAM limitée)
+      - OLLAMA_KV_CACHE_TYPE=${OLLAMA_KV_CACHE_TYPE:-q8_0}
+      # durée de vie des modèles en RAM/VRAM avant déchargement
+      - OLLAMA_KEEP_ALIVE=15m
     deploy:
       resources:
         reservations:

@@ -26,19 +26,24 @@
 
 `winget install -h Docker.sbx`
 
+
+* se donner un compte sur docker.com et se connecter avec `sbx login`
+
+
 * lancer le sandbox contenant **opencode**
 
 `sbx run opencode`
 
 * manager les règles d'accès entrées/sorties du sandbox avec `sbx tui`
 * exécuter dans le sandbox `sbx exec -it <sandbox_name> bash`
-  ou dans le tui
+  ou dans le tui avec la touche `x` dans la liste des sandboxes
 
 ### se connecter à un provider LLM
 
 * `/connect` pour se connecter à un provider LLM (Anthropic, OpenAI, etc.)
+  - les clés api sont stockées dans `~/.local/share/opencode/auth.json` (ou `%APPDATA%\opencode\auth.json` sur Windows)
 
-* pour un llm local, utiliser la congiguration `dans ~/.config/opencode/opencode.json` 
+* pour un llm local, utiliser la configuration `dans ~/.config/opencode/opencode.json` 
 
 ### Initialiser le projet avec OpenCode
 
@@ -72,6 +77,8 @@ mon-projet/
 ```
 
 > **Important** : Toute modification de `opencode.json` ou des fichiers de configuration nécessite un redémarrage d'OpenCode pour prendre effet.
+
+> subsidiarité: le fichier opencode.json à la racine du projet est prioritaire sur le fichier de configuration global `~/.config/opencode/opencode.json` (ou `%APPDATA%\opencode\opencode.json` sur Windows). 
 
 ---
 

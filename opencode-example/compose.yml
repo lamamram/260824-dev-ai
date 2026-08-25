@@ -1,0 +1,29 @@
+services:
+  database:
+    # la version 18+ de PostgreSQL demande une autre configuration pour le mot de passe, donc on reste sur la version 17
+    image: 'docker.io/postgres:17'
+    environment:
+      POSTGRES_PASSWORD: "roottoor"
+    ports:
+      - 5432:5432
+    volumes:
+      - pg-data:/var/lib/postgresql/data/
+ 
+  pgadmin:
+    image: 'docker.io/dpage/pgadmin4:latest'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "me@example.com"
+      PGADMIN_DEFAULT_PASSWORD: "roottoor"
+    # pgadmin est accessible sur le port 15080 de l'hôte, mais il écoute sur le port 80 à l'intérieur du conteneur
+    ports:
+      - 15080:80
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin/
+
+volumes:
+  pg-data:
+  pgadmin-data:
+
+# dans pgadmin, se connecter avec: me@example.com / roottoor
+# créer un serveur "default" avec une connexion : host=database, port=5432, username=postgres, password=roottoor
+# créer une base de données "formation" dans ce serveur

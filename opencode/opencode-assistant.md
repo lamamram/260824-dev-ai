@@ -15,7 +15,13 @@
 
 ## 1. Prérequis et structure du projet
 
+
+![Structure du projet](schema.png)
+
 ### Installation avec un sandbox docker
+
+![Installation avec un sandbox docker](sandbox.png)
+
 
 * activer le support de hyperviseur sur Windows 11
   [ici](https://docs.docker.com/ai/sandboxes/install/)

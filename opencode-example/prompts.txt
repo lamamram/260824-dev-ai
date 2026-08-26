@@ -1,0 +1,2 @@
+use build agent, to:
+- @fastapi-sqalchemy-expert execute /tdd <issue_name>

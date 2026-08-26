@@ -38,11 +38,12 @@
 
 * lancer le sandbox contenant **opencode**
 
-`sbx run opencode`
+`sbx run opencode --publish 15080:15080 --name opencode-sandbox`
 
 * manager les règles d'accès entrées/sorties du sandbox avec `sbx tui`
 * exécuter dans le sandbox `sbx exec -it <sandbox_name> bash`
   ou dans le tui avec la touche `x` dans la liste des sandboxes
+* `--publish 15080:15080` permet d'accéder à l'interface web du sandbox sur le port 15080 de l'hôte (localhost:15080)
 
 ### se connecter à un provider LLM
 

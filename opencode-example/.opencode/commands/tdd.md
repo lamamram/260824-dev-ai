@@ -5,3 +5,4 @@ model: ollama/qwen3.8:27b
 ---
 
 use the tdd skill to implement and test the spec specs/$1.md with TDD methodology.
+when all tests pass, then commit the changes to the repo with a commit message "feat: implement $1 with TDD" 

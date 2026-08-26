@@ -207,14 +207,17 @@ def update_article(
 
 @router.post("/{article_id}/tags", response_model=ArticleResponse)
 def ajouter_tags_article(
+    req: ArticleTags,
     article_id: int = Path(gt=0, description="L'ID de l'article doit être un entier positif"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
-    """Ajoute des tags à un article existant (à implémenter)."""
+    """Ajoute les tags désignés par leur nom à un article existant (créés s'ils sont inconnus)."""
     article = get_article_id(db, article_id)
     if article is None:
         raise RessourceNonTrouveException(
             id=article_id,
             resource_type="article"
         )
+    ajouter_tags(db, article, req.tags)
+    db.commit()
     return article

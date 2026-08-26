@@ -22,6 +22,11 @@ Formation project: FastAPI "API Catalogue" (French) + SQLAlchemy 2.0 ORM + Postg
    - `python init_db.py --force-delete` **drops all tables then reseeds** — destructive, only run deliberately
 - Connection comes from `.env` (`PG_USER`, `PG_PASS`, `PG_HOST`, `PG_PORT`, `PG_DB`) loaded via `load_dotenv()` in `database.py`; do not hardcode credentials
 
+## install packets (unusal)
+
+1. verify if packets are installed else then `pip install --break-system-packages -r requirements.txt` to create it globally without venv because the sandbox is has both windows and linux filesystem and the venv is not working properly
+2. finally run `uvicorn main:app --reload` to start the server
+
 ## Conventions
 
 - Code, identifiers, comments and docstrings are all in **French** — follow this style

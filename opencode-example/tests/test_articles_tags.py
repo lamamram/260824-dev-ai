@@ -4,14 +4,16 @@ La base `formation` (docker compose) doit être initialisée avec `python init_d
 """
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from main import app
-from database import SessionLocal, Article, Tag
+from database import SessionLocal, Article, Tag, articles_tags
 
 client = TestClient(app)
 
 TAG_NOUVEAU = "pytest-tag-nouveau"
 TAGS_NOUVEAUX = ["pytest-tag-nouveau", "pytest-tag-bis"]
+TAG_EXISTANT = "Python"  # seedé par init_db.py
 
 
 @pytest.fixture
@@ -31,8 +33,16 @@ def article_de_test():
     yield article_id
 
     db = SessionLocal()
+    # supprimer d'abord TOUTES les lignes d'association qui référencent les
+    # tags de test (y compris des articles résiduels de runs précédents),
+    # sinon la suppression des tags viole la contrainte de clé étrangère
+    ids_tags = select(Tag.id).where(Tag.nom.in_(TAGS_NOUVEAUX))
+    db.execute(articles_tags.delete().where(articles_tags.c.tag_id.in_(ids_tags)))
+    # supprimer l'article de test et le(s) tag(s) créé(s) pendant le test
+    article_obj = db.get(Article, article_id)
+    if article_obj is not None:
+        db.delete(article_obj)
     db.query(Tag).filter(Tag.nom.in_(TAGS_NOUVEAUX)).delete()
-    db.delete(db.get(Article, article_id))
     db.commit()
     db.close()
 
@@ -72,3 +82,18 @@ def test_ajouter_plusieurs_nouveaux_tags(article_de_test):
     rechargement = db.get(Article, article_de_test)
     db.close()
     assert set(TAGS_NOUVEAUX) <= {tag.nom for tag in rechargement.tags}
+
+def test_ajouter_un_tag_deja_existant(article_de_test):
+    """POST un tag déjà présent dans la table tags : il n'est pas dupliqué, mais associé à l'article."""
+    reponse = client.post(f"/articles/{article_de_test}/tags", json={"tags": [TAG_EXISTANT]})
+    assert reponse.status_code == 200
+    corps = reponse.json()
+    assert sum(1 for tag in corps["tags"] if tag["nom"] == TAG_EXISTANT) == 1
+
+    # vérification dans la base : un seul tag "Python" existe, et il est associé à l'article
+    db = SessionLocal()
+    nb_tags = db.query(Tag).filter(Tag.nom == TAG_EXISTANT).count()
+    rechargement = db.get(Article, article_de_test)
+    db.close()
+    assert nb_tags == 1
+    assert sum(1 for tag in rechargement.tags if tag.nom == TAG_EXISTANT) == 1

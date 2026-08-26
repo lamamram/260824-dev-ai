@@ -26,3 +26,18 @@ def ajouter_tags(
             db.flush()  # générer l'ID pour l'association à la table article-tag
         article.tags.append(tag)
     return article
+
+def supprimer_tags(
+    db: Session,
+    article: Article,
+    noms: List[str]
+):
+    """
+    Retire de l'article les associations vers les tags désignés par leur nom.
+    Un tag inconnu ou non porté par l'article est ignoré.
+    """
+    for nom in noms:
+        tag = db.execute(select(Tag).where(Tag.nom == nom)).scalar_one_or_none()
+        if tag is not None and tag in article.tags:
+            article.tags.remove(tag)
+    return article

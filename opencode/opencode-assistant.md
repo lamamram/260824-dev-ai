@@ -6,10 +6,14 @@
 
 2. [Commandes slash personnalisées](#2-commandes-slash-personnalisées)
 3. [Skills (compétences réutilisables)](#3-skills-compétences-réutilisables)
-4. [Sous-agents spécialisés](#4-sous-agents-spécialisés)
-5. [Agent asynchrone autonome](#5-agent-asynchrone-autonome)
-6. [Sessions partagées](#6-sessions-partagées)
-7. [Configuration d'équipe complète](#7-configuration-déquipe-complète)
+
+4. [utiliser des tools externes MCPS](#4-utiliser-des-tools-externes-mcps)
+
+5. [Sous-agents spécialisés](#5-sous-agents-spécialisés)
+
+6. [Agent asynchrone autonome](#6-agent-asynchrone-autonome)
+7. [Sessions partagées](#7-sessions-partagées)
+8. [Configuration d'équipe complète](#8-configuration-déquipe-complète)
 
 ---
 
@@ -324,7 +328,65 @@ permission:
 
 ---
 
-## 4. Sous-agents spécialisés
+## 4. utiliser des tools externes MCPS
+
+> [ doc - ici ](https://opencode.ai/docs/mcp-servers/)
+
+### :pushpin: le protocole MCP
+
+![](./mcp-protocol.png)
+
+### :pushpin: exemple en local: context7
+
+* install: [dans npm.js](https://www.npmjs.com/package/@upstash/context7-mcp)
+  + `npm i -g @upstash/context7-mcp`
+
+* config dans `opencode.jsonc`:
+
+```jsonc
+{
+  ...
+  "mcp": {
+    "context7": {
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+> :bulb: REM1: `npx` est un outil qui permet d'installer et exécuter un package npm à la volée.
+> comme `pipx` pour python avec pip qui ajoute en plus un environnement virtuel à la volée.
+
+> :bulb: REM2: on peut également installer le mcp avec la commande `opencode mcp add`
+> qui nous guide vers l'installation et la configuration du mcp au niveau global `~/.config/opencode/opencode.json`. 
+
+### :pushpin: exemple playwright
+
+* [ dans github ](https://github.com/microsoft/playwright-mcp)
+
+* config dans `opencode.jsonc`:
+
+```jsonc
+{
+  ...
+  "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "@playwright/mcp@latest"
+      ],
+      "enabled": true
+    }
+}
+```
+
+> :bulb: REM: un mcp utilsant des images/docker doit consommer plus de ressources(tokens).
+
+---
+
+## 5. Sous-agents spécialisés
 
 Un sous-agent (`mode: subagent`) est un assistant spécialisé invoqué par un agent primaire ou manuellement via `@nom-agent`.
 
@@ -433,7 +495,7 @@ hidden: true
 
 ---
 
-## 5. Agent asynchrone autonome
+## 6. Agent asynchrone autonome
 
 Un agent asynchrone autonome est un sous-agent avec toutes les permissions accordées, sans approbation utilisateur, conçu pour s'exécuter de façon autonome en tâche de fond ou via CLI.
 
@@ -620,7 +682,7 @@ vers l'étape suivante si la précédente est en échec.
 ![](./workflow_nuxt_base.png)
 
 
-## 6. Sessions partagées
+## 7. Sessions partagées
 
 Le partage permet à l'équipe de consulter une conversation OpenCode via un lien public.
 
@@ -676,7 +738,7 @@ Cela supprime le lien **et** les données de la session des serveurs.
 
 ---
 
-## 7. Configuration d'équipe complète
+## 8. Configuration d'équipe complète
 
 ### `opencode.json` de référence pour une équipe
 

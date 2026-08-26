@@ -5,7 +5,7 @@ from dependencies import get_query_params, GetQueryParams
 from schemas.articles import ArticleCreation, ArticleResponse, ArticleTags, ArticleUpdate, ArticleCountByUser, ArticleCountPublieByUser
 
 # isoler les requêtes SQL dans un module cruds/articles.py pour séparer la logique métier de la logique de persistance
-from cruds.articles import get_article_id, ajouter_tags
+from cruds.articles import get_article_id, ajouter_tags, supprimer_tags
 from typing import List
 
 from sqlalchemy import select, func, case
@@ -219,5 +219,22 @@ def ajouter_tags_article(
             resource_type="article"
         )
     ajouter_tags(db, article, req.tags)
+    db.commit()
+    return article
+
+@router.delete("/{article_id}/tags", response_model=ArticleResponse)
+def supprimer_tags_article(
+    req: ArticleTags,
+    article_id: int = Path(gt=0, description="L'ID de l'article doit être un entier positif"),
+    db: Session = Depends(get_db)
+):
+    """Supprime les tags désignés par leur nom d'un article existant ; un tag non porté par l'article est ignoré."""
+    article = get_article_id(db, article_id)
+    if article is None:
+        raise RessourceNonTrouveException(
+            id=article_id,
+            resource_type="article"
+        )
+    supprimer_tags(db, article, req.tags)
     db.commit()
     return article

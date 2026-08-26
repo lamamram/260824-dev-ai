@@ -12,6 +12,7 @@ Formation project: FastAPI "API Catalogue" (French) + SQLAlchemy 2.0 ORM + Postg
 
 - `database.py` — **both** the engine/session config (`get_db`, `SessionLocal`) **and** all ORM models (`Utilisateur`, `Article`, `Tag`, `ProfilUtilisateur`). There is no separate `models.py`.
 - `routers/` — FastAPI endpoints; `cruds/` — isolated SQL access (keep new queries there, not in routers); `schemas/` — Pydantic request/response models; `dependencies.py` — shared query-param dependency; `exceptions.py` — `RessourceNonTrouveException` (globally handled in `main.py` → 404 JSON, raise it instead of `HTTPException(404)`)
+- tests/ — pytest tests (one per router, one per CRUD, one for auth)
 
 ## Database setup (required order)
 

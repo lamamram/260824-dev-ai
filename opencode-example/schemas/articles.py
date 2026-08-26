@@ -12,6 +12,9 @@ class ArticleUpdate(BaseModel):
     contenu: str = Field(min_length=10)
     publie: Optional[bool] = Field(default=None, description="Indique si l'article est publié ou non. Si None, ne pas modifier le statut de publication.")
 
+class ArticleTags(BaseModel):
+    tags: List[str] = Field(min_length=1, description="Liste des noms de tags à ajouter à l'article.")
+
 # ------------ pydantic responses schémas ------------
 
 class TagSchema(BaseModel):

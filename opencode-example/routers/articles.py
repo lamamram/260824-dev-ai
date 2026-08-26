@@ -2,10 +2,10 @@ from fastapi import APIRouter, Path, Query, HTTPException, Depends, BackgroundTa
 from datetime import datetime
 from exceptions import RessourceNonTrouveException
 from dependencies import get_query_params, GetQueryParams
-from schemas.articles import ArticleCreation, ArticleResponse, ArticleUpdate, ArticleCountByUser, ArticleCountPublieByUser
+from schemas.articles import ArticleCreation, ArticleResponse, ArticleTags, ArticleUpdate, ArticleCountByUser, ArticleCountPublieByUser
 
 # isoler les requêtes SQL dans un module cruds/articles.py pour séparer la logique métier de la logique de persistance
-from cruds.articles import get_article_id
+from cruds.articles import get_article_id, ajouter_tags
 from typing import List
 
 from sqlalchemy import select, func, case
@@ -203,4 +203,18 @@ def update_article(
         setattr(article, key, value)
     # UPDATE articles SET titre=..., contenu=..., publie=... WHERE id=...
     db.commit()
+    return article
+
+@router.post("/{article_id}/tags", response_model=ArticleResponse)
+def ajouter_tags_article(
+    article_id: int = Path(gt=0, description="L'ID de l'article doit être un entier positif"),
+    db: Session = Depends(get_db),
+):
+    """Ajoute des tags à un article existant (à implémenter)."""
+    article = get_article_id(db, article_id)
+    if article is None:
+        raise RessourceNonTrouveException(
+            id=article_id,
+            resource_type="article"
+        )
     return article
